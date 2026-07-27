@@ -1,1 +1,26 @@
+name: Claude PR spike
 
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to ask Claude to do"
+        required: true
+        default: "Create a file named spike-test.txt containing the text abc. Then open a pull request with that change."
+
+jobs:
+  claude-spike:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ github.event.inputs.task }}
