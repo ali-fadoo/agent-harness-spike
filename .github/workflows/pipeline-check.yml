@@ -1,0 +1,25 @@
+name: claude-spike
+on: workflow_dispatch
+
+jobs:
+  spike:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make the change and open a PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="spike/plumbing-$(date +%s)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          echo "abc" > spike-test.txt
+          git add spike-test.txt
+          git commit -m "spike: add spike-test.txt"
+          git push origin "$BRANCH"
+          gh pr create --title "Spike test" --body "Pipeline check, no model call" --base main --head "$BRANCH"
