@@ -14,14 +14,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      issues: write
       id-token: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Claude
-        uses: anthropics/claude-code-action@v1
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: ${{ github.event.inputs.task }}
+          claude_args: "--model claude-sonnet-5"
+          show_full_output: true
+          prompt: |
+            Create a file named spike-test.txt containing the text abc.
+            Then open a pull request with that change.
