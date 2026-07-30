@@ -1,29 +1,50 @@
 name: pipeline-check
-on: workflow_dispatch
+
+on:
+  workflow_dispatch:
+  issue_comment:
+    types: [created]
 
 jobs:
   spike:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.comment.body, '@claude')
     runs-on: self-hosted
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Open a PR to prove the trigger fired
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          ISSUE: ${{ github.event.issue.number }}
         run: |
           BRANCH="harness/trigger-$(date +%s)"
+          STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          echo "Harness trigger ran successfully at $(date -u +%Y-%m-%dT%H:%M:%SZ)" > harness-trigger.txt
+          echo "Harness trigger ran successfully at $STAMP" > harness-trigger.txt
+          echo "Triggered by: $EVENT (requested by $ACTOR)" >> harness-trigger.txt
           git add harness-trigger.txt
           git commit -m "Harness trigger ran successfully"
           git push origin "$BRANCH"
-          gh pr create \
+
+          PR_URL=$(gh pr create \
             --title "Harness trigger ran successfully" \
-            --body "Opened automatically by the harness trigger check. No model call involved." \
+            --body "Opened automatically. Trigger: $EVENT, requested by @$ACTOR at $STAMP. No model call involved." \
             --base main \
-            --head "$BRANCH"
+            --head "$BRANCH")
+
+          if [ -n "$ISSUE" ]; then
+            gh issue comment "$ISSUE" --body "Harness trigger ran successfully. Opened $PR_URL"
+          fi
