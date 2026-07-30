@@ -1,4 +1,4 @@
-name: claude-spike
+name: pipeline-check
 on: workflow_dispatch
 
 jobs:
@@ -10,16 +10,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Make the change and open a PR
+      - name: Open a PR to prove the trigger fired
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="spike/plumbing-$(date +%s)"
+          BRANCH="harness/trigger-$(date +%s)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          echo "abc" > spike-test.txt
-          git add spike-test.txt
-          git commit -m "spike: add spike-test.txt"
+          echo "Harness trigger ran successfully at $(date -u +%Y-%m-%dT%H:%M:%SZ)" > harness-trigger.txt
+          git add harness-trigger.txt
+          git commit -m "Harness trigger ran successfully"
           git push origin "$BRANCH"
-          gh pr create --title "Spike test" --body "Pipeline check, no model call" --base main --head "$BRANCH"
+          gh pr create \
+            --title "Harness trigger ran successfully" \
+            --body "Opened automatically by the harness trigger check. No model call involved." \
+            --base main \
+            --head "$BRANCH"
